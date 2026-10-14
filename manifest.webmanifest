@@ -1,0 +1,62 @@
+{
+ "name": "Lion Strike: F-15SG",
+ "short_name": "Lion Strike",
+ "description": "16-bit arcade shoot-'em-up: fly RSAF jets through 10 sorties.",
+ "id": "./",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "display_override": [
+  "fullscreen",
+  "standalone"
+ ],
+ "orientation": "portrait",
+ "background_color": "#061224",
+ "theme_color": "#061224",
+ "categories": [
+  "games"
+ ],
+ "lang": "en",
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icons/maskable-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "maskable"
+  },
+  {
+   "src": "icons/maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "screenshots": [
+  {
+   "src": "screenshots/shot-title.jpg",
+   "sizes": "540x1080",
+   "type": "image/jpeg",
+   "form_factor": "narrow",
+   "label": "Title screen"
+  },
+  {
+   "src": "screenshots/shot-boss.jpg",
+   "sizes": "540x1080",
+   "type": "image/jpeg",
+   "form_factor": "narrow",
+   "label": "Final boss: the BLACK STAR rocket"
+  }
+ ]
+}
