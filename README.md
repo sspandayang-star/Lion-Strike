@@ -17,5 +17,8 @@ It then launches full-screen like an app, works offline after the first visit, a
 - **Touch:** drag anywhere to fly; tap the bomb icon (or put a second finger down) to drop a bomb.
 - **Keyboard:** arrow keys to fly, **Space** for a bomb, **P** to pause, **Esc** to go back.
 
+## Play statistics
+The game sends anonymous play statistics to the developer: a random ID for each device, play time, sortie results and scores. No names, accounts or personal details are collected.
+
 ## What's in this repository
 `index.html` is the whole game. `music/` holds the soundtrack, `icons/` and `manifest.webmanifest` make it installable, and `sw.js` lets it run offline. Updating the game means replacing these files with a new build; players get the new version on their next launch.

@@ -16103,6 +16103,76 @@ medalList=function(){ const o=$('#medals'), L=o.querySelector('.md-list'); L.inn
   sec('HARDCORE MEDALS','For veteran pilots. Three of them are hidden.',1); MEDALS.filter(M=>M.hc).forEach(row);
   o.classList.remove('hidden'); };
 
+/* ==== p9zy_v171stats.js ==== */
+
+
+const STATS_URL = 'https://script.google.com/macros/s/AKfycbwK4DQn5O3K7aPopEUSjBd9EECoEk4O27cbckF1tdwY0gPviqfzzQVtvoqcuXYPYwEE/exec';
+const STATS_VER = '17.1';
+window.ST17 = (() => {
+  const href = location.href;
+  const isApk = /^file:\/\/\/android_asset\//.test(href);
+  const isWeb = /^https?:$/.test(location.protocol) && !/claude|localhost|^127\.|^0\.0\.0\.0$/.test(location.hostname);
+  const url = window.LS_STATS_URL || STATS_URL;
+  const on = !!url && (isWeb || isApk || !!window.LS_PC || !!window.LS_STATS_TEST);
+  const K = 'ls_stats17';
+  const rid = () => { try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    const h = () => Math.floor(Math.random() * 65536).toString(16).padStart(4, '0');
+    return h() + h() + '-' + h() + '-4' + h().slice(1) + '-a' + h().slice(1) + '-' + h() + h() + h(); };
+  let st = null; try { st = JSON.parse(localStorage.getItem(K) || 'null'); } catch (e) {}
+  if (!st || !/^[A-Za-z0-9-]{8,40}$/.test(st.pid || '')) st = { pid: rid(), play: 0, best: 0, q: [] };
+  if (!Array.isArray(st.q)) st.q = [];
+  const sid = rid().slice(0, 8);
+  let sess = 0, sortie = 0, lastSave = 0, lastLeave = -1, sending = false;
+  const ua = navigator.userAgent || '';
+  const device = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iOS'
+    : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Macintosh/.test(ua) ? 'Mac' : /Linux|CrOS/.test(ua) ? 'Linux' : 'Other';
+  const standalone = () => { try { return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true; } catch (e) { return false; } };
+  const platform = isApk ? 'android-app' : window.LS_PC ? 'pc-app' : standalone() ? 'web-installed' : 'web';
+  const save = () => { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} };
+  const jet = () => { try { return curPlane().id; } catch (e) { return (S && S.plane) || ''; } };
+  const best = () => { try { st.best = Math.max(st.best || 0, S.best || 0, S.score || 0); } catch (e) {} return st.best; };
+
+  function flush(beacon) {
+    if (!on || !st.q.length) return;
+    if (navigator.onLine === false) return;
+    const batch = st.q.slice(0, 25), body = JSON.stringify(batch);
+    if (beacon && navigator.sendBeacon) {
+      let ok = false; try { ok = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain' })); } catch (e) {}
+      if (ok) { st.q.splice(0, batch.length); save(); }
+      return;
+    }
+    if (sending) return; sending = true;
+    fetch(url, { method: 'POST', mode: 'no-cors', keepalive: body.length < 60000, headers: { 'Content-Type': 'text/plain' }, body })
+      .then(() => { st.q.splice(0, batch.length); save(); sending = false; if (st.q.length) setTimeout(flush, 1500); })
+      .catch(() => { sending = false; });
+  }
+  function ev(type, extra, beacon) {
+    if (!on) return;
+    st.q.push(Object.assign({ pid: st.pid, sid, ev: type, platform, device, ver: STATS_VER, jet: jet(),
+      playSess: Math.round(sess), playTotal: Math.round(st.play), best: best() }, extra || {}));
+    if (st.q.length > 60) st.q.splice(0, st.q.length - 60);
+    save(); flush(beacon);
+  }
+
+  { const _u = update; update = function (dt) { const r = _u.apply(this, arguments);
+      if (G && screenName === 'game' && !paused && dt > 0 && dt < 0.25) { sess += dt; sortie += dt; st.play += dt;
+        if (st.play - lastSave > 10) { lastSave = st.play; save(); } }
+      return r; }; }
+  { const _sl = startLevel; startLevel = function () { const r = _sl.apply(this, arguments); sortie = 0; if (G) G._st17 = 0; return r; }; }
+  const sortieEnd = (result, lv, j) => { if (!G || G._st17) return; G._st17 = 1;
+    ev('sortie', { lv, jet: j, result, score: (S && S.score) || 0, secs: Math.round(sortie) }); };
+
+  { const _lc = levelClear; levelClear = function () { try { sortieEnd('clear', S.level, jet()); } catch (e) {} return _lc.apply(this, arguments); }; }
+  { const _go = gameOver; gameOver = function () { try { sortieEnd('fail', S.level, jet()); } catch (e) {} return _go.apply(this, arguments); }; }
+
+  const leave = () => { if (Math.round(sess) === lastLeave) { flush(true); return; } lastLeave = Math.round(sess); ev('leave', null, true); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') leave(); else flush(); });
+  window.addEventListener('pagehide', leave);
+  window.addEventListener('online', () => flush());
+  setTimeout(() => ev('start'), 3500);
+  return { on, get pid() { return st.pid; }, get queue() { return st.q.length; }, get play() { return st.play; }, flush, ev };
+})();
+
 /* ---------------- loop ---------------- */
 let last=0;
 function frame(ts){ const dt=Math.min(0.035,(ts-last)/1000||0.016); last=ts; if(screenName==='game'&&!paused&&G) update(dt); try{ render(dt); }catch(err){ console.error(err); } requestAnimationFrame(frame); }
