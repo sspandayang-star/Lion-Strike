@@ -13,6 +13,9 @@ No sign-in and no download. It works on phones, tablets and computers.
 
 It then launches full-screen like an app, works offline after the first visit, and keeps your saved progress.
 
+## Boss rush
+From the main menu, **Boss rush** sends you against all ten bosses back to back with your current jet and hangar loadout: **Normal** (sortie 1–10 strength), **Hard** (11–20) or **Impossible** (21–30). Hits carry over from boss to boss and the clock runs throughout; your best times are kept. Your campaign is not affected.
+
 ## Controls
 - **Touch:** drag anywhere to fly; tap the bomb icon (or put a second finger down) to drop a bomb.
 - **Keyboard:** arrow keys to fly, **Space** for a bomb, **P** to pause, **Esc** to go back.
