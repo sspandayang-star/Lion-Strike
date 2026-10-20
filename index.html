@@ -16107,7 +16107,7 @@ medalList=function(){ const o=$('#medals'), L=o.querySelector('.md-list'); L.inn
 
 
 const STATS_URL = 'https://script.google.com/macros/s/AKfycbwK4DQn5O3K7aPopEUSjBd9EECoEk4O27cbckF1tdwY0gPviqfzzQVtvoqcuXYPYwEE/exec';
-const STATS_VER = '17.3';
+const STATS_VER = '17.4';
 window.ST17 = (() => {
   const href = location.href;
   const isApk = /^file:\/\/\/android_asset\//.test(href);
@@ -16386,7 +16386,7 @@ drawIntro17=function(){ const I=G&&G.intro, B=G&&G.ban17;
   if(!B) return; const t=B.t, K=INTRO17, lvI=(S.level-1)%NLEVELS, op=OPS17[lvI]||OPS17[0], L=LEVELS[lvI];
   const a=Math.min(1,t/0.25)*(1-sstep(K.end-0.25,K.txt,t)); if(a<=0) return;
   const y=H*0.36, hh=54*Math.min(1,t/0.22);
-  const head=RUSH.on&&G.rush17?'BOSS RUSH - '+RUSH_D[RUSH.d].n.toUpperCase()+' - TARGET '+(RUSH.i+1)+'/10':'SORTIE '+String(S.level).padStart(2,'0')+' - '+L.name.toUpperCase();
+  const head=RUSH.on&&G.rush17?rushHead17():'SORTIE '+String(S.level).padStart(2,'0')+' - '+L.name.toUpperCase();
   ctx.save(); ctx.globalAlpha=a*0.8; pxRect(ctx,0,y-hh,W,hh*2,'#0b111b'); ctx.globalAlpha=a; ctx.fillStyle=RUSH.on&&G.rush17?'#d0302a':'#b8862b'; ctx.fillRect(0,y-hh,W,1.5); ctx.fillRect(0,y+hh-1.5,W,1.5);
   if(hh>40){ hudText(head,W/2,y-45,'#8fd6ff',1,'center');
     hudText('OPERATION',W/2,y-33,'#ffd36b',1.5,'center');
@@ -16397,6 +16397,7 @@ drawIntro17=function(){ const I=G&&G.intro, B=G&&G.ban17;
   const P=opPatch17(); if(!P) return;
   const u=clamp((t-0.08)/0.28,0,1), s=1+(1-u)*(1-u)*0.5, w=P.w*s, h=P.h*s, py=y-54-6-P.h/2;
   ctx.save(); ctx.globalAlpha=a*u; ctx.imageSmoothingEnabled=s>1.01; ctx.drawImage(P.img,W/2-w/2,py-h/2,w,h); ctx.restore(); };
+function rushHead17(){ return 'BOSS RUSH - '+RUSH_D[RUSH.d].n.toUpperCase()+' - TARGET '+(RUSH.i+1)+'/10'; }
 
 { const _dh=drawHUD; drawHUD=function(p){ _dh(p); if(!RUSH.on||!G||!G.rush17) return;
     hudText('RUSH '+(RUSH.i+1)+'/10  '+mmss17(RUSH.t),10,34,'#ff9a80',1,'left'); }; }
@@ -16463,6 +16464,157 @@ function rushEndRender(){ const R=RUSH.res; if(!R) return; const D=RUSH_D[R.d], 
 
 { const _lb=window.lsBack; window.lsBack=function(){ const vis=id=>{ const e=document.querySelector(id); return !!e&&!e.classList.contains('hidden'); };
     if(vis('#rushSel')||vis('#rushEnd')){ openTitle(); return true; } return _lb.apply(this,arguments); }; }
+
+/* ==== p9zzb_v174.js ==== */
+
+
+const LB17={key:'ls_callsign', jetKey:'ls_rushjet', modeKey:'ls_rushmode', cache:null, cacheAt:0, from:null, tab:0};
+const LBJETS=[['f15','F-15SG'],['f16','F-16'],['f35','F-35A']];
+const lbJetName=id=>(LBJETS.find(j=>j[0]===id)||[0,'—'])[1];
+const lbStore=(k,v)=>{ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){} return null; };
+function lbCallsign(v){ const s=String(v==null?'':v).toUpperCase().replace(/[^A-Z0-9 _-]/g,'').replace(/\s+/g,' ').trim().slice(0,12); return /^[A-Z0-9][A-Z0-9 _-]{2,11}$/.test(s)?s:''; }
+const lbOnline=()=>!!(window.ST17&&ST17.on);
+const lbUrl=()=>window.LS_STATS_URL||STATS_URL;
+const mmss174=s=>{ s=Math.max(0,s||0); const m=Math.floor(s/60), r=s-m*60; return m+':'+(r<10?'0':'')+r.toFixed(1); };
+
+window.addEventListener('keydown',e=>{ const t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')&&e.key!=='Enter') e.stopImmediatePropagation(); },true);
+
+rushRec=function(m){ m=m||(RUSH.ranked?'ranked':'free'); try{ return JSON.parse(localStorage.getItem(RUSH_KEY+(m==='ranked'?'_ranked':''))||'{}')||{}; }catch(e){ return {}; } };
+rushRecSave=function(r,m){ m=m||(RUSH.ranked?'ranked':'free'); try{ localStorage.setItem(RUSH_KEY+(m==='ranked'?'_ranked':''),JSON.stringify(r)); }catch(e){} };
+rushHead17=function(){ return (RUSH.ranked?'RANKED RUSH - ':'BOSS RUSH - ')+RUSH_D[RUSH.d].n.toUpperCase()+' - TARGET '+(RUSH.i+1)+'/10'; };
+
+{ const rb0=rushBegin; rushBegin=function(d,opt){ RUSH.ranked=!!(opt&&opt.ranked); RUSH.jet=(opt&&opt.jet)||null; RUSH.name=(opt&&opt.name)||''; return rb0.call(this,d); }; }
+
+{ const _sb=specBought; specBought=function(){ if(RUSH.on&&RUSH.ranked) return 0; return _sb.apply(this,arguments); }; }
+function rushKit17(){ const keep={}; for(const k of ['sfx','shakeOn','flashOn','sens']) if(S&&k in S) keep[k]=S[k];
+  S=Object.assign(fresh(),keep,{started:true,tutSeen:true,plane:RUSH.jet||'f15',level:30,placed:[],stash:[],fusions:[],offers:[],run:null,score:0});
+  try{ applyPlane(true); ensureUniqueGun(); }catch(e){ console.warn('kit',e); }
+  for(let r=0;r<4;r++) for(let y=0;y<GH;y++) for(let x=0;x<GW;x++){ const a=anchored('missile',r,x,y); if(fits(a,null)){ S.placed.push({id:S.nextId++,k:'missile',x:a.x,y:a.y,r:a.r}); return true; } }
+  return false; }
+{ const rb0=rushBoss; rushBoss=function(i){ if(RUSH.ranked&&i===0) rushKit17(); rb0.apply(this,arguments);
+    if(RUSH.ranked&&G&&G.p){ G.p.power=3; G.p.bombs=4; } }; }
+
+{ const rf0=rushFinish; rushFinish=function(won,quit){ const was=RUSH.on&&!RUSH.ending; rf0.apply(this,arguments); const R=RUSH.res; if(!was||!R) return;
+    R.ranked=!!RUSH.ranked; R.jet=RUSH.jet; R.name=RUSH.name; R.sent=false;
+    if(R.ranked&&R.beaten>=1&&lbOnline()&&R.name){ try{ ST17.ev('rush',{name:R.name,diff:RUSH_D[R.d].id,jet:R.jet,beaten:R.beaten,secs:Math.round(R.t*10)/10,score:R.score,
+          result:R.won?'clear':R.quit?'quit':'fail',mode:'ranked'}); R.sent=true; LB17.cache=null; }catch(e){ console.warn('rush send',e); } } }; }
+
+function lbFetch(force){
+  if(!force&&LB17.cache&&performance.now()-LB17.cacheAt<20000) return Promise.resolve(LB17.cache);
+  const url=lbUrl()+'?board=1&pid='+encodeURIComponent((window.ST17&&ST17.pid)||'')+'&t='+Date.now();
+  const keep=j=>{ if(!j||!j.ok||!j.boards) throw new Error('bad'); LB17.cache=j; LB17.cacheAt=performance.now(); return j; };
+  const jsonp=()=>new Promise((res,rej)=>{ const cb='lsLb'+Date.now()+Math.floor(Math.random()*1e4), s=document.createElement('script'); let done=false;
+    const fin=(f,v)=>{ if(done) return; done=true; clearTimeout(tm); try{ delete window[cb]; }catch(e){ window[cb]=undefined; } s.remove(); f(v); };
+    const tm=setTimeout(()=>fin(rej,new Error('net')),10000);
+    window[cb]=j=>fin(res,j); s.onerror=()=>fin(rej,new Error('net')); s.src=url+'&callback='+cb; document.head.appendChild(s); });
+  return fetch(url,{cache:'no-store'}).then(r=>r.text()).then(t=>{ let j=null; try{ j=JSON.parse(t); }catch(e){ throw new Error(/stats are live/i.test(t)?'old':'bad'); } return j; },
+      ()=>jsonp()).then(keep); }
+function lbErrText(e){ const m=e&&e.message; return m==='old'?'THE LEADERBOARD IS NOT SWITCHED ON YET':m==='bad'?'THE LEADERBOARD SENT SOMETHING ODD. TRY AGAIN LATER':'CAN\'T REACH THE LEADERBOARD. CHECK YOUR CONNECTION'; }
+
+{ const css=document.createElement('style'); css.textContent=`
+.rsMode,.lbTabs{ display:flex; gap:8px; justify-content:center; margin:0 0 12px; }
+.rsMode button,.lbTabs button{ font:inherit; font-size:13px; letter-spacing:2px; color:var(--u-dim); background:rgba(0,0,0,.35); border:0; padding:9px 12px 8px; cursor:pointer; box-shadow:0 0 0 2px #2c3680; text-transform:uppercase; }
+.rsMode button.on,.lbTabs button.on{ color:#2a1600; background:linear-gradient(#ffe066 0 46%,#f2b41e 46% 100%); box-shadow:0 0 0 2px var(--u-lo),0 0 0 4px #ffcf3a; }
+.rsField{ display:flex; align-items:center; gap:8px; margin:10px 0 2px; }
+.rsField span{ font-size:11px; letter-spacing:2px; color:var(--u-cyan); }
+.rsField input{ flex:1; min-width:0; font:inherit; font-size:16px; letter-spacing:2px; text-transform:uppercase; color:var(--u-ink); background:#070a1c; border:0; padding:8px 8px 7px; box-shadow:inset 0 0 0 2px #2c3680; outline:none; border-radius:0; -webkit-user-select:text; user-select:text; }
+.rsField input:focus{ box-shadow:inset 0 0 0 2px #ffcf3a; }
+.rsHint{ font-size:10px; letter-spacing:1px; color:var(--u-dim); margin-bottom:8px; }
+.rsHint.bad{ color:#ff6a5a; }
+.rsJets{ display:flex; gap:6px; margin:4px 0 8px; }
+.rsJets button{ flex:1; font:inherit; font-size:12px; letter-spacing:1px; color:var(--u-ink); background:rgba(0,0,0,.35); border:0; padding:7px 2px 6px; cursor:pointer; box-shadow:inset 0 0 0 2px #2c3680; }
+.rsJets button small{ display:block; font-size:9px; color:var(--u-dim); margin-top:2px; }
+.rsJets button.on{ box-shadow:inset 0 0 0 2px #ffcf3a; background:rgba(255,207,58,.12); }
+.rsRule2{ font-size:10px; line-height:1.6; letter-spacing:.5px; color:var(--u-dim); border-top:2px dashed #2c3680; margin-top:8px; padding-top:7px; }
+.rsFoot{ display:flex; gap:10px; justify-content:center; }
+#rushLb{ justify-content:flex-start; padding-top:28px; }
+#rushLb .uPanel{ width:min(360px,94vw); padding:10px 10px 8px; box-sizing:border-box; margin-bottom:10px; }
+.lbRow{ display:grid; grid-template-columns:30px 1fr 52px 46px 58px; gap:4px; align-items:center; padding:6px 2px; font-size:12px; letter-spacing:.5px; color:var(--u-ink); border-bottom:1px dashed #2c3680; }
+.lbRow.h{ font-size:9px; letter-spacing:1px; color:var(--u-dim); border-bottom:2px solid #2c3680; padding-top:2px; }
+.lbRow span:nth-child(n+3){ text-align:right; } .lbRow span:nth-child(2){ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lbRow.me{ background:rgba(255,207,58,.14); color:#ffe9a0; } .lbRow.gap{ border-top:2px dotted #2c3680; }
+.lbRow .r1{ color:#ffcf3a; } .lbRow .r2{ color:#dfe6f5; } .lbRow .r3{ color:#e0a060; }
+.lbNote{ font-size:10px; letter-spacing:1px; color:var(--u-dim); text-align:center; padding:10px 4px 4px; line-height:1.6; }
+.reLb{ text-align:center; margin-top:8px; font-size:11px; letter-spacing:1px; color:var(--u-cyan); }
+.reKit{ text-align:center; font-size:10px; letter-spacing:1px; color:var(--u-dim); margin:-4px 0 8px; }
+#rushEnd .rsFoot .btn{ min-width:0 !important; width:auto; }`; document.head.appendChild(css); }
+{ const l=document.createElement('div'); l.id='rushLb'; l.className='overlay hidden';
+  l.innerHTML=`<h2>Leaderboard</h2><div class="rsTag">RANKED BOSS RUSH</div><div class="lbTabs"></div>
+    <div class="uPanel"><div class="lbRows"></div><div class="lbNote"></div></div><div class="rsFoot"><button class="btn small lbRefresh">Refresh</button><button class="btn small lbBack">Back</button></div>`;
+  $('#wrap').appendChild(l); screens.push('#rushLb');
+  RUSH_D.forEach((D,i)=>{ const b=document.createElement('button'); b.textContent=D.n; b.onclick=()=>{ SFX.ui(); LB17.tab=i; lbRender(); }; l.querySelector('.lbTabs').appendChild(b); });
+  l.querySelector('.lbBack').onclick=()=>{ SFX.ui(); lbBack(); };
+  l.querySelector('.lbRefresh').onclick=()=>{ SFX.ui(); lbRender(true); }; }
+function lbBack(){ if(LB17.from==='end'&&RUSH.res){ screenName='rush'; showOnly('#rushEnd'); } else openRushSel(); }
+function openLeaderboard(d,from){ LB17.from=from||'sel'; if(d!=null) LB17.tab=d; screenName='rushlb'; showOnly('#rushLb'); $('#rushLb').scrollTop=0; lbRender(true); }
+function lbRender(force){ const el=$('#rushLb'), D=RUSH_D[LB17.tab], rows=el.querySelector('.lbRows'), note=el.querySelector('.lbNote');
+  el.querySelectorAll('.lbTabs button').forEach((b,i)=>b.classList.toggle('on',i===LB17.tab));
+  const head='<div class="lbRow h"><span>#</span><span>CALLSIGN</span><span>JET</span><span>TARGETS</span><span>TIME</span></div>';
+  if(!lbOnline()){ rows.innerHTML=''; note.textContent='THE LEADERBOARD WORKS IN THE ONLINE GAME: OPEN IT FROM THE WEBSITE OR THE APP.'; return; }
+  rows.innerHTML=head; note.textContent='LOADING…';
+  lbFetch(force).then(j=>{ if(screenName!=='rushlb') return; const list=j.boards[D.id]||[], you=j.you&&j.you[D.id], n=(j.counts&&j.counts[D.id])||list.length;
+    const row=(r,me,gap)=>`<div class="lbRow${me?' me':''}${gap?' gap':''}"><span class="${r.r<=3?'r'+r.r:''}">${r.r|0}</span><span>${lbCallsign(r.name)||'?'}${me?' ◀':''}</span><span>${lbJetName(r.jet)}</span><span>${Math.max(0,Math.min(10,r.beaten|0))}/10</span><span>${mmss174(+r.secs)}</span></div>`;
+    let h=head+list.map(r=>row(r,r.me)).join('');
+    if(you&&you.rank>list.length) h+=row({r:you.rank,name:lbCallsign(lbStore(LB17.key))||'YOU',jet:'',beaten:you.beaten,secs:you.secs},true,true);
+    rows.innerHTML=h;
+    note.textContent=list.length?(n+' PILOT'+(n>1?'S':'')+' RANKED · MOST TARGETS FIRST, THEN THE FASTEST TIME'):'NO RANKED RUNS ON '+D.n.toUpperCase()+' YET. BE THE FIRST.'; })
+  .catch(e=>{ if(screenName!=='rushlb') return; rows.innerHTML=''; note.textContent=lbErrText(e); }); }
+
+openRushSel=function(){ screenName='rushsel'; showOnly('#rushSel'); const s=$('#rushSel'); s.scrollTop=0;
+  let mode=lbStore(LB17.modeKey)==='free'?'free':'ranked';
+  let jet=lbStore(LB17.jetKey)||(S&&S.plane)||'f15'; if(!PLANES[jet]) jet='f15';
+  let campJet='F-15SG'; try{ campJet=curPlane().name||campJet; }catch(e){}
+  const parts=(S.placed||[]).filter(it=>ITEMS[it.k]&&!ITEMS[it.k].uniq).length;
+  const panel=s.querySelector('.uPanel');
+  let tabs=s.querySelector('.rsMode'); if(!tabs){ tabs=document.createElement('div'); tabs.className='rsMode'; tabs.innerHTML='<button data-m="ranked">Ranked</button><button data-m="free">Your loadout</button>'; panel.before(tabs); }
+  let foot=s.querySelector('.rsFoot'); if(!foot){ foot=document.createElement('div'); foot.className='rsFoot'; const back=s.querySelector('.rsBack'); back.before(foot); foot.innerHTML='<button class="btn small rsLbBtn">Leaderboard</button>'; foot.appendChild(back); foot.querySelector('.rsLbBtn').onclick=()=>{ SFX.ui(); openLeaderboard(null,'sel'); }; }
+  const draw=()=>{ tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+    if(mode==='ranked'){
+      panel.innerHTML=`<div class="rsJet">RANKED · THE SAME KIT FOR EVERYONE</div>
+        <div class="rsRule">Your jet's own gun at full power, a Missile Rack and 4 bombs for every boss. No hangar parts, no jet upgrades. Your best run on each difficulty goes on the online leaderboard.</div>
+        <label class="rsField"><span>CALLSIGN</span><input class="rsName" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="3-12 LETTERS"></label>
+        <div class="rsHint">${lbOnline()?'Shown to everyone on the leaderboard.':'This copy of the game is offline: ranked runs are kept on this device only.'}</div>
+        <div class="rsJets">${LBJETS.map(([id,n])=>`<button data-j="${id}">${n}<small>${JET_HP[id]||(PLANES[id]&&PLANES[id].hp)||3} HITS</small></button>`).join('')}</div>
+        <div class="rsRule2">Hits carry over from boss to boss (Normal repairs one after each kill) and the clock never stops.</div>`;
+      const inp=panel.querySelector('.rsName'); inp.value=lbCallsign(lbStore(LB17.key))||'';
+      const hint0=panel.querySelector('.rsHint').textContent;
+      inp.addEventListener('input',()=>{ const v=inp.value.toUpperCase().replace(/[^A-Z0-9 _-]/g,'').slice(0,12); if(v!==inp.value) inp.value=v; const h=panel.querySelector('.rsHint'); if(h.classList.contains('bad')){ h.classList.remove('bad'); h.textContent=hint0; } });
+      inp.addEventListener('change',()=>{ const v=lbCallsign(inp.value); if(v) lbStore(LB17.key,v); });
+      panel.querySelectorAll('.rsJets button').forEach(b=>{ b.classList.toggle('on',b.dataset.j===jet); b.onclick=()=>{ SFX.ui(); jet=b.dataset.j; lbStore(LB17.jetKey,jet); panel.querySelectorAll('.rsJets button').forEach(x=>x.classList.toggle('on',x.dataset.j===jet)); }; });
+    } else {
+      panel.innerHTML=`<div class="rsJet">YOUR JET: ${campJet.toUpperCase()} · ${parts?parts+' PART'+(parts>1?'S':'')+' FITTED':'ITS OWN GUN ONLY'}</div>
+        <div class="rsRule">Your own campaign jet and hangar loadout, upgrades included. Not ranked. Your campaign, coins and parts are not touched.</div>
+        <div class="rsRule2">Hits carry over from boss to boss (Normal repairs one after each kill) and your bombs are restocked.</div>`; }
+    const L=s.querySelector('.rsList'); L.innerHTML=''; const rec=rushRec(mode);
+    RUSH_D.forEach((D,i)=>{ const r=rec[D.id]||{}, line=r.best?'BEST TIME '+mmss17(r.best)+(r.wins>1?' · CLEARED '+r.wins+'×':' · CLEARED'):r.far?'FURTHEST '+r.far+'/10':'NOT FLOWN YET';
+      const b=document.createElement('button'); b.className='btn rsD '+D.cls; b.innerHTML=`<b>${D.n}</b><small>${D.sub}</small><i>${line}</i>`;
+      b.onclick=()=>{ if(mode==='ranked'){ const inp=panel.querySelector('.rsName'), name=lbCallsign(inp&&inp.value);
+          if(!name){ SFX.no(); const h=panel.querySelector('.rsHint'); h.textContent='Type a callsign first: 3 to 12 letters or numbers.'; h.classList.add('bad'); if(inp) inp.focus(); return; }
+          lbStore(LB17.key,name); lbStore(LB17.jetKey,jet); SFX.ui();
+          lsDoors('RANKED RUSH',D.n.toUpperCase()+' · '+lbJetName(jet),'TARGET 1/10 · OPERATION '+OPS17[0][0],()=>rushBegin(i,{ranked:true,jet,name})); }
+        else { SFX.ui(); lsDoors('BOSS RUSH',D.n.toUpperCase(),'TARGET 1/10 · OPERATION '+OPS17[0][0],()=>rushBegin(i)); } };
+      L.appendChild(b); }); };
+  tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(mode===b.dataset.m) return; SFX.ui(); mode=b.dataset.m; lbStore(LB17.modeKey,mode); draw(); });
+  draw(); };
+
+{ const re0=rushEndRender; rushEndRender=function(){ re0.apply(this,arguments); const R=RUSH.res; if(!R) return; const e=$('#rushEnd'), D=RUSH_D[R.d];
+    const tag=e.querySelector('.rsTag'); if(tag) tag.textContent=(R.ranked?'RANKED RUSH · ':'BOSS RUSH · ')+D.n.toUpperCase()+(R.ranked?' · '+lbJetName(R.jet):' · YOUR LOADOUT');
+    const again=e.querySelector('.reAgain'); if(again&&R.ranked) again.onclick=()=>{ SFX.ui(); lsDoors('RANKED RUSH',D.n.toUpperCase()+' · '+lbJetName(R.jet),'TARGET 1/10 · OPERATION '+OPS17[0][0],()=>rushBegin(R.d,{ranked:true,jet:R.jet,name:R.name})); };
+    if(!R.ranked) return;
+    const panel=e.querySelector('.uPanel'), st=document.createElement('div'); st.className='reLb'; panel.appendChild(st);
+    const btns=e.querySelector('.rsBtns'), lb=document.createElement('button'); lb.className='btn small'; lb.textContent='Leaderboard'; lb.onclick=()=>{ SFX.ui(); openLeaderboard(R.d,'end'); };
+    const menu=btns.querySelector('.reMenu'); const row=document.createElement('div'); row.className='rsFoot'; menu.before(row); row.appendChild(lb); row.appendChild(menu);
+    if(!lbOnline()){ st.textContent='OFFLINE COPY · NOT SENT TO THE LEADERBOARD'; return; }
+    if(!R.sent){ st.textContent=R.beaten<1?'NO TARGETS DOWN · NOT RANKED':'NOT SENT TO THE LEADERBOARD'; return; }
+    st.textContent='SENT TO THE LEADERBOARD…';
+    const look=(left)=>lbFetch(true).then(j=>{ if(RUSH.res!==R) return; const y=j.you&&j.you[D.id], n=(j.counts&&j.counts[D.id])||0;
+        if(y) st.textContent='YOUR BEST ON '+D.n.toUpperCase()+': #'+y.rank+' OF '+n+' · '+y.beaten+'/10 IN '+mmss174(y.secs);
+        else if(left>0) setTimeout(()=>look(left-1),5000); else st.textContent='SENT · IT WILL SHOW ON THE LEADERBOARD SHORTLY'; })
+      .catch(err=>{ if(RUSH.res!==R) return; if(left>0) setTimeout(()=>look(left-1),5000); else st.textContent=lbErrText(err); });
+    setTimeout(()=>look(2),2500); }; }
+
+{ const _mw=musWant; musWant=function(){ if(MUS.on&&screenName==='rushlb') return 'title'; return _mw.apply(this,arguments); }; }
+{ const _lb=window.lsBack; window.lsBack=function(){ const e=document.querySelector('#rushLb'); if(e&&!e.classList.contains('hidden')){ lbBack(); return true; } return _lb.apply(this,arguments); }; }
 
 /* ---------------- loop ---------------- */
 let last=0;
