@@ -13063,7 +13063,7 @@ spawnWave=function(){
   G.next=G.t+Math.max(2.0,4.6-S.level*0.28);
   if(!fn) return;
   const list=recordWave(fn); if(!list.length) return;
-  let mul=S.level>NLEVELS?2:1.5;
+  let mul=S.level>NLEVELS?2:S.level<=5?1.1:1.5;
   if(BIOMES[(S.level-1)%NLEVELS]==='desert') mul*=0.8;
   G.mulAcc=(G.mulAcc||0)+list.length*(mul-1);
   const extra=[]; let i=0; while(G.mulAcc>=1&&i<list.length*2){ extra.push(mirrorSpawn(list[i%list.length])); G.mulAcc-=1; i++; }
@@ -16127,7 +16127,7 @@ medalList=function(){ const o=$('#medals'), L=o.querySelector('.md-list'); L.inn
 
 
 const STATS_URL = 'https://script.google.com/macros/s/AKfycbwK4DQn5O3K7aPopEUSjBd9EECoEk4O27cbckF1tdwY0gPviqfzzQVtvoqcuXYPYwEE/exec';
-const STATS_VER = '17.5';
+const STATS_VER = '17.6';
 window.ST17 = (() => {
   const href = location.href;
   const isApk = /^file:\/\/\/android_asset\//.test(href);
@@ -16691,6 +16691,100 @@ function frame(ts){ const dt=Math.min(0.035,(ts-last)/1000||0.016); last=ts; if(
 /* PAINTED_BOOT */
 loadPaintedAssets().then(()=>{load(); resize(); openTitle(); requestAnimationFrame(frame);}).catch(error=>{console.error(error);document.body.innerHTML='<p style="color:white;padding:2em">Unable to decode embedded artwork. Please reload the page.</p>';});
 /* END_PAINTED_BOOT */
+
+</script>
+<script>
+/* =====================================================================
+   V17.6
+   · Sorties 1-5 are simpler: about a quarter fewer enemies per wave,
+     enemy bullets 15% slower, enemies, elites and bosses 20% less health
+   · Ghost (sortie 5) final stage: a fixed order again, one move at a time;
+     the next move only starts after the whole speed-slash chain and a
+     normal pause; no phantom slashes, no moves chained in with no gap.
+     New Game+ (sortie 15, 25 ...) picks the moves in a random order, still
+     one at a time with a pause after each.
+   · Ships keep their whole hull in open water: they look ahead the way
+     they are moving over the ground, slide aside or wait when the way is
+     blocked, and turn back before they reach the shore (gunboats,
+     minelayers, torpedo boats, destroyers ... in every sea sortie)
+   ===================================================================== */
+const EASY17=()=>S&&S.level>=1&&S.level<=5;
+const EASY17K={hp:0.8, bullet:0.85};
+
+/* ---------------- sorties 1-5: simpler ---------------- */
+/* fewer enemies: the wave multiplier is 1.1 instead of 1.5 (set in the wave code below via EASY17) */
+{ const _en=enemy; enemy=function(type,x,y,extra){ const e=_en.apply(this,arguments);
+    if(e&&e.type&&!e.dead&&EASY17()&&type!=='elite'&&!e._easy){ e._easy=1; e.hp=e.maxHp=Math.max(1,Math.ceil(e.hp*EASY17K.hp)); }
+    return e; }; }
+{ const _sm=spawnMid; spawnMid=function(){ const r=_sm.apply(this,arguments);
+    if(EASY17()&&G){ const e=G.en.find(q=>q.type==='elite'&&!q.dead&&!q._easy); if(e){ e._easy=1; e.hp=e.maxHp=Math.ceil(e.hp*EASY17K.hp); } }
+    return r; }; }
+{ const _bh=bossHp; bossHp=function(){ const v=_bh.apply(this,arguments); return EASY17()?Math.ceil(v*EASY17K.hp):v; }; }
+{ const _eb=ebullet; ebullet=function(x,y,vx,vy,r,col,extra){
+    if(EASY17()){ const k=EASY17K.bullet; vx*=k; vy*=k; if(extra&&(extra.spd||extra.sspd)) extra=Object.assign({},extra,extra.spd?{spd:extra.spd*k}:{},extra.sspd?{sspd:extra.sspd*k}:{}); }
+    return _eb.call(this,x,y,vx,vy,r,col,extra); }; }
+
+/* ---------------- Ghost: one move at a time ---------------- */
+/* each move sets the pause that follows it (the final stage runs 1.5x fast, so 1.0 here is about 0.67 s) */
+const ghRest17=(a,r)=>Object.assign({},a,{end:b=>{ if(a.end) a.end(b); b.def.rest=r; }});
+const GH17_FIXED=()=>[ghRest17(gFront(2),0.7),ghRest17(gHeadOn(2),0.7),ghRest17(gSlash17(GH17.chain,GH17.quicken),1.0),ghRest17(gSide(2),0.7),ghRest17(ghostRear(),0.7),ghRest17(gHeadOn(2),0.7),ghRest17(gFront(2),0.7)];
+/* New Game+: a random order (never the same move twice running, the slash chain at least every fourth move), a full pause after every move */
+const ghostMixNG17={dur:1e9,
+  start:b=>{ const m=b.mix17||(b.mix17={last:null,since:0});
+    const opts=Object.keys(GHMIX17).filter(k=>k!==m.last); const k=m.since>=3?'slash':opts[Math.floor(Math.random()*opts.length)];
+    m.since=k==='slash'?0:m.since+1; m.last=k; m.k=k; m.sub=GHMIX17[k](); if(m.sub.start) m.sub.start(b); },
+  move:(b,dt,t)=>{ const m=b.mix17; if(m.sub.move) m.sub.move(b,dt,t); },
+  tick:(b,dt,t)=>{ const m=b.mix17; if(m.sub.tick&&b.at<1e9) m.sub.tick(b,dt,t); if(b.at>=m.sub.dur) b.at=1e9; },
+  end:b=>{ const m=b.mix17; if(m.sub.end) m.sub.end(b); b.def.rest=m.k==='slash'?1.0:rnd(0.6,0.8); }};
+{ const B=BOSSES[4], i0=B.init, o0=B.onStage;
+  B.init=b=>{ B.rest=0.55; B.phases[2]=S.level>NLEVELS?[ghostMixNG17]:GH17_FIXED(); if(i0) i0(b); };
+  B.onStage=b=>{ B.rest=0.55; b.mix17=null; if(o0) o0(b); }; }
+
+/* ---------------- ships keep their whole hull in open water ---------------- */
+const SHIP17={pad:5, look:0.9, slide:240};
+function hullHalf17(e){ const w=WAKE[e.type]||{}, len=(w.len||e.r*2)*0.9, beam=(w.beam||e.r)*1.05, a=e.hd===undefined?Math.PI/2:e.hd, c=Math.abs(Math.cos(a)), s=Math.abs(Math.sin(a));
+  return [c*len/2+s*beam/2+SHIP17.pad, s*len/2+c*beam/2+SHIP17.pad]; }
+/* open water along each row of the map, worked out once per row and kept: the land never moves on the map, only the view scrolls */
+const ROW17={key:null,rows:new Map()};
+function rowSpans17(y){ const f=LANDF[BG.biome]; if(!f||!BG.tile) return [[0,W]];
+  if(ROW17.key!==BG.tile||ROW17.isl!==BG.isl||ROW17.biome!==BG.biome||ROW17.w!==W){ ROW17.key=BG.tile; ROW17.isl=BG.isl; ROW17.biome=BG.biome; ROW17.w=W; ROW17.rows.clear(); }
+  const ty=Math.round(tileY(y))%BT; let out=ROW17.rows.get(ty); if(out) return out;
+  out=[]; let st=-1; for(let x=2;x<=W-2;x+=2){ const w=!f(x,ty); if(w&&st<0) st=x; else if(!w&&st>=0){ out.push([st,x-2]); st=-1; } } if(st>=0) out.push([st,W-2]);
+  ROW17.rows.set(ty,out); return out; }
+/* the open water around x on that row (or the nearest open water if x is on land) */
+function waterSpan17(x,y){ const sp=rowSpans17(y); let best=null, bd=1e9; for(const q of sp){ if(x>=q[0]&&x<=q[1]) return q; const d=x<q[0]?q[0]-x:x-q[1]; if(d<bd){ bd=d; best=q; } } return best; }
+/* the stretch of water, between the shores, that is open on every row from y0 to y1 (null if none is wide enough for the hull) */
+function openSpan17(x,y0,y1,hx){ let L=-1e9,R=1e9; for(let y=y0;;y+=6){ const yy=Math.min(y,y1), sp=waterSpan17(clamp(x,Math.max(2,L),Math.min(W-2,R)),yy); if(!sp) return null;
+    L=Math.max(L,sp[0]); R=Math.min(R,sp[1]); if(R-L<2*hx) return null; if(yy>=y1) break; } return [L,R]; }
+function hullOnLand17(e){ const [hx,hy]=hullHalf17(e), p=SHIP17.pad; for(const dx of [-(hx-p),0,hx-p]) for(const dy of [-(hy-p),0,hy-p]){ const x=e.x+dx; if(x>0&&x<W&&surfAt(x,e.y+dy)==='land') return true; } return false; }
+const seaSteer0=seaSteer;
+seaSteer=function(e,dt,m){ if(e.type==='elite') return seaSteer0(e,dt,m); if(!LANDF[BG.biome]||!BG.tile) return;
+  const [hx,hy]=hullHalf17(e), rel=(e.vy||0)-groundV(), ahead=clamp(rel*SHIP17.look,-90,90);
+  let sp=openSpan17(e.x,e.y-hy+Math.min(0,ahead),e.y+hy+Math.max(0,ahead),hx), hold=false;
+  if(!sp){ hold=true;                                                    /* blocked ahead: ride with the ground and slide towards the opening */
+    const yA=rel>=0?e.y+hy+Math.max(24,ahead):e.y-hy+Math.min(-24,ahead); let best=null;
+    for(const [l,r] of rowSpans17(yA)){ if(r-l<2*hx) continue; const cx=clamp(e.x,l+hx,r-hx), o=openSpan17(cx,Math.min(e.y,yA)-hy*0.5,Math.max(e.y,yA)+hy*0.5,hx);
+      if(o){ const tx=clamp(e.x,o[0]+hx,o[1]-hx); if(best===null||Math.abs(tx-e.x)<Math.abs(best-e.x)) best=tx; } }
+    sp=openSpan17(e.x,e.y-hy,e.y+hy,hx);
+    if(best!==null) sp=[best-hx,best+hx];
+    else if(!sp){ const w=waterSpan17(e.x,e.y); if(!w) return; sp=w; } }
+  const [L,R]=sp, tx=R-L<2*hx?(L+R)/2:clamp(e.x,L+hx,R-hx);
+  if(hold&&e._ht17!==G.t){ e._ht17=G.t; e.y-=rel*dt; }
+  if(Math.abs(tx-e.x)>0.5){ const d=tx>e.x?1:-1; e.x+=clamp(tx-e.x,-SHIP17.slide*dt,SHIP17.slide*dt); if(e.dir) turn17(e,d); }
+  else if(e.dir&&(e.x-hx<=L+1&&e.dir<0||e.x+hx>=R-1&&e.dir>0)) turn17(e,-e.dir); };   /* reached the edge of the open water: turn back */
+/* a ship changes course at most about twice a second, so it never wobbles back and forth against a shore */
+function turn17(e,d){ if(e.dir===d) return; if(e._fl17!==undefined&&G.t-e._fl17<0.5) return; e.dir=d; e._fl17=G.t; }
+/* the Croc river monitor (sortie 6) lines its hull up with the river instead of its own drift, so bow and stern stay off the banks */
+function riverHd17(e){ const ty=tileY(e.y), k=(rxJungle(ty+3)-rxJungle(ty-3))/6, rel=(e.vy||0)-groundV(); return rel<=0?Math.atan2(-1,-k):Math.atan2(1,k); }
+/* the base code turns a boat round whenever it is near a screen edge, even when it is already heading back in;
+   with the hull kept clear of the shore that made boats by the edge flick back and forth every frame.
+   Last word each frame: if any part of a hull is on land, move it straight back into open water. */
+{ const _ue=updateEnemy; updateEnemy=function(e,dt){ const d0=e.dir; const r=_ue.apply(this,arguments);
+    if(!e.dead&&e.dom==='sea'&&e.type!=='elite'&&e.type!=='mine'){
+      if(d0&&e.dir&&e.dir!==d0&&(e.x>W-60&&e.dir>0||e.x<60&&e.dir<0)) e.dir=d0;
+      if(LANDF[BG.biome]&&BG.tile&&hullOnLand17(e)) seaSteer(e,dt*2,0); }
+    else if(!e.dead&&e.type==='elite'&&e.kind==='croc'&&BG.biome==='jungle'&&BG.tile&&e.hd!==undefined){ let d=riverHd17(e)-e.hd; while(d>Math.PI) d-=TAU; while(d<-Math.PI) d+=TAU; e.hd+=clamp(d,-4*dt,4*dt); }
+    return r; }; }
 
 </script>
 </body>
