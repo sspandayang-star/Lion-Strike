@@ -16127,7 +16127,7 @@ medalList=function(){ const o=$('#medals'), L=o.querySelector('.md-list'); L.inn
 
 
 const STATS_URL = 'https://script.google.com/macros/s/AKfycbwK4DQn5O3K7aPopEUSjBd9EECoEk4O27cbckF1tdwY0gPviqfzzQVtvoqcuXYPYwEE/exec';
-const STATS_VER = '17.8';
+const STATS_VER = '17.9';
 window.ST17 = (() => {
   const href = location.href;
   const isApk = /^file:\/\/\/android_asset\//.test(href);
@@ -17115,6 +17115,96 @@ function fzDress17(){ try{ const g=$('#grid'); if(!g) return; const cs=gridCs;
       else { el.style.setProperty('--pc','#35e8ff'); el.style.setProperty('--ico',FZI17.plus); } });
   }catch(e){ console.warn('fz178',e); } }
 { const _rh=renderHangar; renderHangar=function(){ const r=_rh.apply(this,arguments); fzDress17(); return r; }; }
+
+</script>
+<script>
+/* =====================================================================
+   V17.9
+   · Ships, elites and sea bosses keep their real hull clear of islands and
+     the shore: hull size now comes from each sprite's visible pixels (the
+     wake table under-sized some, e.g. the Parang by half), a little more
+     clearance, and the same look-ahead steering now also runs for sea elites
+     (Parang, Shadow) and sea bosses (Kris, Leviathan), which only checked
+     their centre line before and could ride over the coast
+   · Spectre (the C-130) circles close to the screen edges instead of over
+     the middle
+   · Parang (sortie 2 elite): no VLS rockets and no torpedo lanes from the
+     side; it keeps its bow gun and CIWS
+   ===================================================================== */
+SHIP17.pad=8;
+const HULL17={};
+/* half width / half length (game units) of a sprite's visible pixels, cached */
+function sprHull17(key,scl){ const id=key+'@'+scl; if(id in HULL17) return HULL17[id]; let r=null;
+  try{ const s=ES[key]&&ES[key](); const im=s&&s.img; if(im&&im.width){ const c=document.createElement('canvas'); c.width=im.width; c.height=im.height; const g=c.getContext('2d'); g.drawImage(im,0,0);
+      const d=g.getImageData(0,0,c.width,c.height).data; let x0=1e9,y0=1e9,x1=-1,y1=-1;
+      for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++) if(d[(y*c.width+x)*4+3]>60){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+      if(x1>=x0){ const k=(s.w||im.width/2)/im.width*scl; r=[(x1-x0+1)*k/2,(y1-y0+1)*k/2]; } } }catch(e){}
+  return HULL17[id]=r; }
+hullHalf17=function(e){ const el=e.type==='elite', D=el?ELITES[e.kind]:EDEF[e.type], w=WAKE[el?e.kind:e.type]||{}, sh=D&&D.s?sprHull17(D.s,D.scl||1):null;
+  const beam=Math.max(sh?sh[0]*2:0,(w.beam||e.r)*1.05), len=Math.max(sh?sh[1]*2*0.95:0,(w.len||e.r*2)*0.9);
+  const a=e.hd===undefined?Math.PI/2:e.hd, c=Math.abs(Math.cos(a)), s=Math.abs(Math.sin(a));
+  return [c*len/2+s*beam/2+SHIP17.pad, s*len/2+c*beam/2+SHIP17.pad]; };
+
+/* the x a hull of half size hx,hy at (x,y) should move to so rows y-hy..y+hy (plus look-ahead) are open water; null = nowhere */
+function clearX17(x,y,hx,hy,ahead){ const y0=y-hy+Math.min(0,ahead), y1=y+hy+Math.max(0,ahead);
+  let sp=openSpan17(x,y0,y1,hx); if(sp) return clamp(x,sp[0]+hx,sp[1]-hx);
+  let best=null; const cands=new Set();
+  for(const yy of [y0,(y0+y1)/2,y1,y]) for(const [l,r] of rowSpans17(yy)) if(r-l>=2*hx) cands.add(Math.round(clamp(x,l+hx,r-hx)));
+  for(const cx of cands){ const o=openSpan17(cx,y0,y1,hx); if(o){ const tx=clamp(x,o[0]+hx,o[1]-hx); if(best===null||Math.abs(tx-x)<Math.abs(best-x)) best=tx; } }
+  if(best!==null) return best;
+  sp=openSpan17(x,y-hy,y+hy,hx); if(sp) return clamp(x,sp[0]+hx,sp[1]-hx);
+  for(const [l,r] of rowSpans17(y)) if(r-l>=2*hx){ const tx=clamp(x,l+hx,r-hx); if(best===null||Math.abs(tx-x)<Math.abs(best-x)) best=tx; }
+  return best; }
+
+/* sea elites (not the free river monitor): the same hull steering, sliding across instead of riding with the ground */
+function eliteSea17(e,dt){ if(!LANDF[BG.biome]||!BG.tile||e.leaving) return; const E=ELITES[e.kind]; if(!E||E.free) return;
+  const [hx,hy]=hullHalf17(e), rel=(e.vy||0)-groundV(), ahead=clamp(rel*0.9,-110,110)+(rel<0?-30:30);
+  const tx=clearX17(e.x,e.y,hx,hy,ahead); if(tx===null) return;
+  if(Math.abs(tx-e.x)>0.5) e.x+=clamp(tx-e.x,-200*dt,200*dt); }
+{ const _ss=seaSteer; seaSteer=function(e,dt,m){ if(e.type==='elite') return eliteSea17(e,dt); return _ss.apply(this,arguments); }; }
+{ const _ue=updateEnemy; updateEnemy=function(e,dt){ const r=_ue.apply(this,arguments);
+    if(!e.dead&&e.type==='elite'&&e.dom==='sea'&&LANDF[BG.biome]&&BG.tile&&hullOnLand17(e)) eliteSea17(e,dt*2);
+    return r; }; }
+
+/* sea bosses: keep the whole ship clear of islands and the shore, looking up the screen where the land comes from */
+function bossHull17(b){ if(b._hull17) return b._hull17; const i=BOSSES.indexOf(b.def), D=BDEF[i]||{}; let hx=b.def.hw||b.r*0.5, hy=b.r;
+  const sh=D.s?sprHull17(D.s,D.scl||1):null; if(sh){ hx=Math.max(hx,sh[0]); hy=Math.max(hy,sh[1]*0.97); }
+  try{ const P=b.def.partsFn&&b.def.partsFn(b); if(P&&P.length) hy=Math.max(hy,...P.map(p=>Math.abs(p.y-b.y)+p.r)); }catch(e){}
+  return b._hull17=[hx+SHIP17.pad+4, hy+SHIP17.pad]; }
+function bossSea17(b,dt){ if(!b||b.dom!=='sea'||b.def.noSurf||!LANDF[BG.biome]||!BG.tile||b.dying>0) return;
+  const [hx,hy]=bossHull17(b), ahead=-(groundV()*1.0+40), tx=clearX17(b.x,b.y,hx,hy,ahead); if(tx===null) return;
+  if(Math.abs(tx-b.x)>0.5) b.x+=clamp(tx-b.x,-320*dt,320*dt); }
+{ const _ub=updateBoss; updateBoss=function(b,dt){ const r=_ub.apply(this,arguments); if(G&&G.boss===b) bossSea17(b,dt); return r; }; }
+
+/* ---------------- Spectre (C-130): orbit near the screen edges ---------------- */
+{ const E=ELITES.spectre, K=E.scl||1.5;
+  E.upd=(e,dt)=>{ const d=bs();
+    if(e.life>30&&!e.leaving){ e.leaving=true; }
+    if(e.leaving){ hd17(e,-Math.PI/2,1.6,dt); e.vx=Math.cos(e.hd)*160; e.vy=Math.sin(e.hd)*160; return; }
+    const vx=e.svx===undefined?0:e.svx, vy=e.svy===undefined?150:e.svy;
+    if(Math.hypot(vx,vy)>5) hd17(e,Math.atan2(vy,vx),EL17.turn,dt);
+    /* a rounded-rectangle circuit hugging the sides and the top: body ~34 units in from each side, ~6% from the top, and across the
+       screen no lower than ~42% of the way down, at a steady ~80 units/s */
+    const cx=W/2, cy=H*0.24, rx=W/2-34, ry=H*0.18, n=4, spd=80;
+    const P=a=>{ const c=Math.cos(a), s=Math.sin(a); return [cx+rx*Math.sign(c)*Math.pow(Math.abs(c),2/n), cy+ry*Math.sign(s)*Math.pow(Math.abs(s),2/n)]; };
+    if(e.oa===undefined) e.oa=-Math.PI/2;
+    const p0=P(e.oa), p1=P(e.oa-0.01), dl=Math.hypot(p1[0]-p0[0],p1[1]-p0[1])/0.01||1, w=spd/dl;
+    if(e.orb) e.oa-=w*dt;
+    const [tx,ty]=P(e.oa), gx=tx-e.x, gy=ty-e.y;
+    if(!e.orb){ const a=Math.atan2(gy,gx); e.vx=Math.cos(a)*160; e.vy=Math.sin(a)*160; if(Math.hypot(gx,gy)<40) e.orb=true; return; }
+    const q=P(e.oa-w*0.1); let fx=(q[0]-tx)/0.1+gx*2.2, fy=(q[1]-ty)/0.1+gy*2.2; const sp=Math.hypot(fx,fy); if(sp>200){ fx*=200/sp; fy*=200/sp; }
+    e.vx=fx; e.vy=fy;
+    const px=Math.sin(e.hd), py=-Math.cos(e.hd), g1=12*K, g2=14*K;
+    ev(e,'105',dt,3.0,()=>{ const tx2=clamp(G.p.x,30,W-30), ty2=clamp(G.p.y,H*0.4,H-40); bigBomb(e.x+px*g2,e.y+py*g2,tx2,ty2,46,1.25,'#ffb040'); });
+    ev(e,'40',dt,1.2,()=>{ for(let i=0;i<3;i++) later(i*0.14,()=>{ if(!G||e.dead) return; const x=e.x+px*g1,y=e.y+py*g1, dist=Math.hypot(G.p.x-x,G.p.y-y); shell(x,y,230*d,6,Math.max(0.25,dist/(230*d)-0.1),C.amber); mflash(x,y,Math.atan2(py,px),6); }); });
+    burst(e,'25',dt,0.05,12,1.1,()=>{ const x=e.x+px*g1,y=e.y+py*g1,a=aimedAt(x,y)+rnd(-0.08,0.08); mg(x,y,a,260*d,'#ffd26a'); }); }; }
+
+/* ---------------- Parang (sortie 2 elite): bow gun and CIWS only ---------------- */
+ELITES.parang.upd=(e,dt)=>{ const d=bs(); if(e.life>28&&!e.leaving) eLeave(e,0,SCROLL*1.6); if(e.leaving) return;
+  e.vy=clamp((H*0.24-e.y)*1.5,-50,90); e.vx=Math.sin(e.life*0.5)*24;
+  if(e.y<20) return;
+  ev(e,'gun',dt,1.05,()=>{ const [x,y]=eP(e,0,29),a=eAim(e,0,29),[mx,my]=muz(x,y,a,22); fan(mx,my,3,0.45,165*d,a,5,C.blue); mflash(mx,my,a,8); });
+  burst(e,'cw',dt,0.06,8,0.9,()=>{ const [x,y]=eP(e,0,-38),a=eAim(e,0,-38)+rnd(-0.06,0.06),[mx,my]=muz(x,y,a,14); mg(mx,my,a,250*d); mflash(mx,my,a,3.5); }); };
 
 </script>
 </body>
