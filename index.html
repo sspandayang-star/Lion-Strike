@@ -950,7 +950,7 @@ function useBomb(){
 }
 function gameOver(){
   screenName='over'; if(S.score>S.best) S.best=S.score;
-  $('#overText').textContent=`Sortie ${S.level} · Score ${S.score} · Coins salvaged this run: ${G.coins}`;
+  $('#overText').textContent=`Sortie ${S.level} · Score ${S.score} · +${G.coins} ¢`;
   S.coins+=G.coins; S.offers=[]; save(); showOnly('#over');
 }
 $('#btnRetry').onclick=()=>{ SFX.ui(); openHangar(); };
@@ -10728,7 +10728,7 @@ TUT.splice(TUT.findIndex(t=>t[0]==='LOCK-ON'),1);
 { const c=document.querySelector('#title .controls'); if(c) c.innerHTML='Drag anywhere to fly. Guns fire on their own. Only the small white dot on the jet can be hit.<br>Tap a second finger anywhere (or the bomb icons) to bomb · tap the score (top-left) to pause.<br>Keyboard: arrows / WASD, space = bomb, P = pause.'; }
 
 canvas.addEventListener('pointerdown',e=>{ if(screenName!=='game'||!G) return; const r=canvas.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*W, y=(e.clientY-r.top)/r.height*H;
-  if(x>W-96&&y>H-58){ e.stopImmediatePropagation(); e.preventDefault(); if(!paused) useBomb(); return; }
+  if(x>W-100&&y>H-70){ e.stopImmediatePropagation(); e.preventDefault(); if(!paused) useBomb(); return; }
   if(!paused&&ptr&&ptr.id!==e.pointerId&&e.pointerType!=='mouse'){ e.stopImmediatePropagation(); e.preventDefault(); useBomb(); return; }
   if(x<120&&y<44){ e.stopImmediatePropagation(); e.preventDefault(); togglePause(); } },true);
 
@@ -12131,7 +12131,7 @@ function hgDecorate(){
 }
 
 { const _oh=openHangar; openHangar=function(){ _oh.apply(this,arguments); hint(''); }; }
-{ const _h=hint; hint=function(t){ _h(t||'Weapons go on RED slots (nose & wings), utility parts on GREEN slots (centre). Drag a part to fit it; a second finger rotates it.'); }; }
+{ const _h=hint; hint=function(t){ _h(t||'Drag parts onto slots · 2nd finger rotates.'); }; }
 { const _sd=startDrag; startDrag=function(ev,item,from){ _sd(ev,item,from); if(!drag) return; const k=item.k, z=ITEMS[k].zone;
     hint(`${ITEMS[k].n}: ${isWeapon(k)?'WEAPON → red slots':z==='U'?'UTILITY → green slots':'UTILITY → any slot touching a weapon'}. 2nd finger rotates.`); }; }
 
@@ -12284,7 +12284,7 @@ function fmDock(pairs){ const D=$('#fzDock'); if(!D) return; if(!FM.on){ D.inner
     let h=`<h3 style="margin:0 0 6px;color:${d.col}">${d.n}</h3><div class="pp">${catTag(k)} <span style="color:#c9d1f2">Fits: ${fitsText(k)}</span></div><div class="pp">${d.d}</div>`;
     if(isWeapon(k)) h+=`<div class="pp"><span style="color:#3ee6ff">Fires:</span> ${d.pat} · <span style="color:#ff9ad5">Shoots:</span> ${d.pay}</div>`;
     h+=`<div class="pp" style="color:#9ba7da">${d.size} slot${d.size>1?'s':''} · weight ${d.wt} · sells for ${Math.floor(d.c*0.6)} ¢</div>`;
-    if(isWeapon(k)&&from==='placed') h+=fu?`<div class="pp" style="color:#ffcf3a">Fused with ${ITEMS[other.k].n}.</div>`:`<div class="pp" style="color:#9ba7da">Put another weapon next to it, then press <b style="color:#ffcf3a;font-weight:400">FUSION</b> and tap the link.</div>`;
+    if(isWeapon(k)&&from==='placed') h+=fu?`<div class="pp" style="color:#ffcf3a">Fused with ${ITEMS[other.k].n}.</div>`:`<div class="pp" style="color:#9ba7da">Fuse: weapon next to it, then <b style="color:#ffcf3a;font-weight:400">FUSION</b>.</div>`;
     if(k==='ammo'||k==='cooler') h+='<div class="pp" style="color:#9ba7da">Boosts only the weapons it touches.</div>';
     body.innerHTML=h;
     if(isWeapon(k)){ const cv=document.createElement('canvas'); cv.className='wprev'; body.prepend(cv); wpnSim(cv,k,k); }
@@ -13874,7 +13874,7 @@ function playEnding(done){
   const main=document.getElementById('c'), rc=main.getBoundingClientRect(), dpr=Math.min(3,window.devicePixelRatio||1), SW=W, SH=H;
   const ov=document.createElement('div'); ov.id='ending'; ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#000;';
   const cv=document.createElement('canvas'); cv.width=Math.round(rc.width*dpr); cv.height=Math.round(rc.height*dpr); cv.style.cssText=`position:absolute;left:${rc.left}px;top:${rc.top}px;width:${rc.width}px;height:${rc.height}px;image-rendering:auto;`;
-  const skip=document.createElement('button'); skip.textContent='SKIP  ▸▸'; skip.style.cssText=`position:absolute;left:${rc.left+rc.width/2}px;top:${rc.top+rc.height-58*rc.width/W}px;transform:translateX(-50%);font-family:LionPixel,monospace!important;font-size:${Math.round(13*rc.width/W)}px;letter-spacing:2px;color:#ffe9c0;background:rgba(10,6,20,.55);border:2px solid rgba(255,220,160,.7);border-radius:4px;padding:6px 18px;cursor:pointer;z-index:2;`;
+  const skip=document.createElement('button'); skip.textContent='SKIP  ▸▸'; skip.style.cssText=`position:absolute;left:${rc.left+rc.width/2}px;top:${rc.top+rc.height-58*rc.width/W}px;transform:translateX(-50%);font-family:LionPixel,monospace!important;font-size:${Math.round(13*rc.width/W)}px;letter-spacing:2px;color:#ffe9c0;background:rgba(10,6,20,.55);border:2px solid rgba(255,220,160,.7);border-radius:4px;padding:13px 28px;min-height:46px;cursor:pointer;z-index:2;`;
   ov.appendChild(cv); ov.appendChild(skip); document.body.appendChild(ov);
   const g=cv.getContext('2d'), sc=cv.width/SW; let t0=performance.now(), fin=false, last=t0;
   const HY=SH*0.57, sky=a14('sunsetSky',null,2), line=a14('skyline',null,2), seas=[0,1,2,3].map(k=>a14('sea',{k},2));
@@ -13919,7 +13919,7 @@ function playEnding(done){
       playEnding(()=>{ screenName='game'; _lc.apply(self,args); }); return; } return _lc.apply(this,arguments); }; }
 
 { const wp=document.querySelectorAll('#win p'); if(wp[1]) wp[1].textContent='BLACK STAR is down and the skies over the Lion City are clear. Keep flying: New Game+ loops the campaign with twice the enemies and tougher bosses.';
-  const op=document.querySelectorAll('#over p'); if(op[1]) op[1].textContent='Your jet is down. Coins and equipment are kept: refit in the hangar and fly the sortie again.';
+  const op=document.querySelectorAll('#over p'); if(op[1]) op[1].textContent='Coins and parts are kept.';
   const tp=document.querySelectorAll('#title p'); if(tp[0]) tp[0].textContent='Fly the Republic of Singapore Air Force\'s F-15SG, F-16 and F-35 through ten sorties over air, land and sea. Each jet takes a few hits; kill the boss, then fit your jet in the hangar.'; }
 
 /* ==== p9x_v14intel.js ==== */
@@ -14931,7 +14931,7 @@ playEnding=function(done){
   const N=Math.max(1,Math.min(4,Math.ceil(rc.width*dpr/(SW*2)-0.02)));
   const cv=document.createElement('canvas'); cv.width=SW*2*N; cv.height=Math.round(SH*2)*N; cv.style.cssText=`position:absolute;left:${rc.left}px;top:${rc.top}px;width:${rc.width}px;height:${rc.height}px;image-rendering:auto;`;
   const buf=document.createElement('canvas'); buf.width=SW*2; buf.height=Math.round(SH*2); const g=buf.getContext('2d');
-  const skip=document.createElement('button'); skip.textContent='SKIP  ▸▸'; skip.style.cssText=`position:absolute;left:${rc.left+rc.width/2}px;top:${rc.top+rc.height-58*rc.width/W}px;transform:translateX(-50%);font-family:LionPixel,monospace!important;font-size:${Math.round(13*rc.width/W)}px;letter-spacing:2px;color:#ffe9c0;background:rgba(10,6,20,.55);border:2px solid rgba(255,220,160,.7);border-radius:4px;padding:6px 18px;cursor:pointer;z-index:2;`;
+  const skip=document.createElement('button'); skip.textContent='SKIP  ▸▸'; skip.style.cssText=`position:absolute;left:${rc.left+rc.width/2}px;top:${rc.top+rc.height-58*rc.width/W}px;transform:translateX(-50%);font-family:LionPixel,monospace!important;font-size:${Math.round(13*rc.width/W)}px;letter-spacing:2px;color:#ffe9c0;background:rgba(10,6,20,.55);border:2px solid rgba(255,220,160,.7);border-radius:4px;padding:13px 28px;min-height:46px;cursor:pointer;z-index:2;`;
   ov.appendChild(cv); ov.appendChild(skip); document.body.appendChild(ov);
   const out=cv.getContext('2d'); out.imageSmoothingEnabled=false;
   let t0=performance.now()-(END15.skipTo||0)*1000, last=performance.now(), fin=false;
@@ -15817,10 +15817,10 @@ function specNext(id){ let best=null; for(const k of Object.keys(PLANES[id].bars
       const nx=specNext(curPlane().id); em.textContent=nx===null?'SPECS MAX':'UPGRADE'; em.classList.toggle('dim',nx===null||S.coins<nx);
       if(!S.specSeen&&screenName==='hangar') setTimeout(specIntro,350); }catch(e){} return r; }; }
 function specIntro(){ if(S.specSeen||$('#specIntro')||screenName!=='hangar') return; S.specSeen=true; save();
-  const P=curPlane(), list=Object.keys(SPEC_INFO).map(k=>`<li><b>${k.toUpperCase()}</b> · each box: ${SPEC_INFO[k][0]}</li>`).join('');
+  const P=curPlane(), list=Object.keys(SPEC_INFO).map(k=>`<li><b>${k.toUpperCase()}</b> · ${SPEC_INFO[k][1](1)}</li>`).join('');
   const o=document.createElement('div'); o.id='specIntro';
-  o.innerHTML=`<div class="uPanel"><h3>NEW GAME+ · JET UPGRADES</h3><p>You can now upgrade your jets' stats with coins. Tap the jet button in the hangar (${P.name}), then the + buttons beside each stat. Upgrades are permanent and belong to that jet.</p>
-    <ul>${list}</ul><p>Each stat goes up to 5 boxes. The 2nd box costs 1,500 ¢, the 3rd 4,000 ¢, the 4th 10,000 ¢ and the 5th 25,000 ¢.</p>
+  o.innerHTML=`<div class="uPanel"><h3>NEW GAME+ · JET UPGRADES</h3><p>Buy permanent stat boxes: jet button (${P.name}), then +. Each box:</p>
+    <ul>${list}</ul><p>Boxes 2-5: 1,500 · 4,000 · 10,000 · 25,000 ¢</p>
     <div class="row"><button class="btn small" data-a="later">Later</button><button class="btn small primary" data-a="go">Upgrade now</button></div></div>`;
   document.body.appendChild(o);
   o.querySelector('[data-a="later"]').onclick=()=>{ try{ SFX.ui(); }catch(e){} o.remove(); };
@@ -16119,7 +16119,7 @@ medalList=function(){ const o=$('#medals'), L=o.querySelector('.md-list'); L.inn
     const g2=M.goal&&!got?M.goal():null, run=S.run&&S.run.full&&S.level<=NLEVELS&&['untouchable','purist','steady','blitz'].includes(M.id)&&!got;
     const prog=got?`EARNED ${new Date(got).toLocaleDateString()}`:hid17(M)?'HIDDEN':g2?`${Math.min(g2[0],g2[1]).toLocaleString()} / ${g2[1].toLocaleString()}`:run?runNote(M.id):'NOT YET';
     const tx=document.createElement('div'); tx.innerHTML=hid17(M)?`<b>???</b><span>A hidden medal. Keep flying to find it.</span><small>${prog}</small>`:`<b>${M.n}</b><span>${M.d}</span><small>${prog}</small>`; r.appendChild(tx); L.appendChild(r); };
-  sec('SERVICE MEDALS','Kept across every campaign.'); MEDALS.filter(M=>!M.hc).forEach(row);
+  sec('SERVICE MEDALS',''); MEDALS.filter(M=>!M.hc).forEach(row);
   sec('HARDCORE MEDALS','For veteran pilots. Three of them are hidden.',1); MEDALS.filter(M=>M.hc).forEach(row);
   o.classList.remove('hidden'); };
 
@@ -16127,7 +16127,7 @@ medalList=function(){ const o=$('#medals'), L=o.querySelector('.md-list'); L.inn
 
 
 const STATS_URL = 'https://script.google.com/macros/s/AKfycbwK4DQn5O3K7aPopEUSjBd9EECoEk4O27cbckF1tdwY0gPviqfzzQVtvoqcuXYPYwEE/exec';
-const STATS_VER = '17.6';
+const STATS_VER = '17.7';
 window.ST17 = (() => {
   const href = location.href;
   const isApk = /^file:\/\/\/android_asset\//.test(href);
@@ -16570,7 +16570,7 @@ function openLeaderboard(d,from){ LB17.from=from||'sel'; if(d!=null) LB17.tab=d;
 function lbRender(force){ const el=$('#rushLb'), D=RUSH_D[LB17.tab], rows=el.querySelector('.lbRows'), note=el.querySelector('.lbNote');
   el.querySelectorAll('.lbTabs button').forEach((b,i)=>b.classList.toggle('on',i===LB17.tab));
   const head='<div class="lbRow h"><span>#</span><span>CALLSIGN</span><span>JET</span><span>TARGETS</span><span>TIME</span></div>';
-  if(!lbOnline()){ rows.innerHTML=''; note.textContent='THE LEADERBOARD WORKS IN THE ONLINE GAME: OPEN IT FROM THE WEBSITE OR THE APP.'; return; }
+  if(!lbOnline()){ rows.innerHTML=''; note.textContent='NEEDS THE ONLINE GAME: WEBSITE OR APP.'; return; }
   rows.innerHTML=head; note.textContent='LOADING…';
   lbFetch(force).then(j=>{ if(screenName!=='rushlb') return; const list=j.boards[D.id]||[], you=j.you&&j.you[D.id], n=(j.counts&&j.counts[D.id])||list.length;
     const row=(r,me,gap)=>`<div class="lbRow${me?' me':''}${gap?' gap':''}"><span class="${r.r<=3?'r'+r.r:''}">${r.r|0}</span><span>${lbCallsign(r.name)||'?'}${me?' ◀':''}</span><span>${lbJetName(r.jet)}</span><span>${Math.max(0,Math.min(10,r.beaten|0))}/10</span><span>${mmss174(+r.secs)}</span></div>`;
@@ -16591,11 +16591,11 @@ openRushSel=function(){ screenName='rushsel'; showOnly('#rushSel'); const s=$('#
   const draw=()=>{ tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
     if(mode==='ranked'){
       panel.innerHTML=`<div class="rsJet">RANKED · THE SAME KIT FOR EVERYONE</div>
-        <div class="rsRule">Your jet's own gun at full power, a Missile Rack and 4 bombs for every boss. No hangar parts, no jet upgrades. Your best run on each difficulty goes on the online leaderboard.</div>
+        <div class="rsRule">Full-power gun, Missile Rack, 4 bombs per boss. No parts, no upgrades. Best runs go online.</div>
         <label class="rsField"><span>CALLSIGN</span><input class="rsName" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="3-12 LETTERS"></label>
-        <div class="rsHint">${lbOnline()?'Shown to everyone on the leaderboard.':'This copy of the game is offline: ranked runs are kept on this device only.'}</div>
+        <div class="rsHint">${lbOnline()?'Shown to everyone on the leaderboard.':'Offline copy: runs stay on this device.'}</div>
         <div class="rsJets">${LBJETS.map(([id,n])=>`<button data-j="${id}">${n}<small>${JET_HP[id]||(PLANES[id]&&PLANES[id].hp)||3} HITS</small></button>`).join('')}</div>
-        <div class="rsRule2">Hits carry over from boss to boss (Normal repairs one after each kill) and the clock never stops.</div>`;
+        <div class="rsRule2">Hits carry over · Normal repairs 1 per kill · clock never stops.</div>`;
       const inp=panel.querySelector('.rsName'); inp.value=lbCallsign(lbStore(LB17.key))||'';
       const hint0=panel.querySelector('.rsHint').textContent;
       inp.addEventListener('input',()=>{ const v=inp.value.toUpperCase().replace(/[^A-Z0-9 _-]/g,'').slice(0,12); if(v!==inp.value) inp.value=v; const h=panel.querySelector('.rsHint'); if(h.classList.contains('bad')){ h.classList.remove('bad'); h.textContent=hint0; } });
@@ -16603,8 +16603,8 @@ openRushSel=function(){ screenName='rushsel'; showOnly('#rushSel'); const s=$('#
       panel.querySelectorAll('.rsJets button').forEach(b=>{ b.classList.toggle('on',b.dataset.j===jet); b.onclick=()=>{ SFX.ui(); jet=b.dataset.j; lbStore(LB17.jetKey,jet); panel.querySelectorAll('.rsJets button').forEach(x=>x.classList.toggle('on',x.dataset.j===jet)); }; });
     } else {
       panel.innerHTML=`<div class="rsJet">YOUR JET: ${campJet.toUpperCase()} · ${parts?parts+' PART'+(parts>1?'S':'')+' FITTED':'ITS OWN GUN ONLY'}</div>
-        <div class="rsRule">Your own campaign jet and hangar loadout, upgrades included. Not ranked. Your campaign, coins and parts are not touched.</div>
-        <div class="rsRule2">Hits carry over from boss to boss (Normal repairs one after each kill) and your bombs are restocked.</div>`; }
+        <div class="rsRule">Your campaign jet and parts, upgrades included. Not ranked; your campaign is untouched.</div>
+        <div class="rsRule2">Hits carry over · Normal repairs 1 per kill · bombs restock.</div>`; }
     const L=s.querySelector('.rsList'); L.innerHTML=''; const rec=rushRec(mode);
     RUSH_D.forEach((D,i)=>{ const r=rec[D.id]||{}, line=r.best?'BEST TIME '+mmss17(r.best)+(r.wins>1?' · CLEARED '+r.wins+'×':' · CLEARED'):r.far?'FURTHEST '+r.far+'/10':'NOT FLOWN YET';
       const b=document.createElement('button'); b.className='btn rsD '+D.cls; b.innerHTML=`<b>${D.n}</b><small>${D.sub}</small><i>${line}</i>`;
@@ -16785,6 +16785,108 @@ function riverHd17(e){ const ty=tileY(e.y), k=(rxJungle(ty+3)-rxJungle(ty-3))/6,
       if(LANDF[BG.biome]&&BG.tile&&hullOnLand17(e)) seaSteer(e,dt*2,0); }
     else if(!e.dead&&e.type==='elite'&&e.kind==='croc'&&BG.biome==='jungle'&&BG.tile&&e.hd!==undefined){ let d=riverHd17(e)-e.hd; while(d>Math.PI) d-=TAU; while(d<-Math.PI) d+=TAU; e.hd+=clamp(d,-4*dt,4*dt); }
     return r; }; }
+
+</script>
+<script>
+/* =====================================================================
+   V17.7 · tidier UI
+   · every button a thumb can need is at least ~46 px tall (tutorial,
+     pop-ups, tabs, boss rush, leaderboard, jet select, hangar, options)
+   · less text: short hangar hint, shorter depot cards and stats line,
+     shorter boss-rush rules, game-over and upgrade cards
+   · in a sortie: a real PAUSE button (top left) and a round BOMB button
+     with the bomb count (bottom right); health moves to bottom left
+   ===================================================================== */
+{ const st=document.createElement('style'); st.id='ui177'; st.textContent=`
+/* ---------- thumb-sized buttons ---------- */
+html body #wrap .btn.small{ min-height:46px !important; }
+html body #tut #tutBack, html body #tut #tutNext{ min-width:124px !important; min-height:52px !important; font-size:15px !important; }
+html body #tut #tutSkip{ min-width:190px !important; min-height:48px !important; font-size:14px !important; }
+html body #popup #popClose, html body #popup #popUnlink{ min-width:132px !important; min-height:52px !important; font-size:15px !important; }
+html body #medals .md-close{ min-width:150px !important; min-height:52px !important; font-size:15px !important; }
+html body #specIntro .btn.small{ min-width:140px !important; min-height:52px !important; font-size:14px !important; white-space:nowrap !important; }
+html body #hangar #hgHome{ min-height:44px !important; min-width:92px !important; font-size:14px !important; }
+html body #hangar #btnReroll{ min-height:46px !important; }
+html body #hangar .chip{ min-height:38px !important; display:flex !important; align-items:center; }
+html body #hangar .offer .buy{ min-height:48px !important; font-size:14px !important; }
+html body #planeSel .ps-nav{ width:50px !important; height:66px !important; font-size:22px !important; }
+html body #planeSel #psBack{ min-width:150px !important; min-height:52px !important; font-size:15px !important; }
+html body #rushSel .rsMode button, html body #rushLb .lbTabs button{ min-height:46px !important; font-size:14px !important; padding-top:0 !important; padding-bottom:0 !important; }
+html body #rushSel .rsJets button{ min-height:52px !important; font-size:14px !important; }
+html body #rushSel .rsName{ min-height:46px !important; font-size:16px !important; }
+html body #rushSel .rsFoot .btn, html body #rushLb .rsFoot .btn{ min-width:150px !important; min-height:54px !important; font-size:15px !important; }
+html body #intel .itabs button{ min-height:46px !important; font-size:12px !important; }
+html body #options .uRow{ min-height:44px !important; box-sizing:border-box; display:flex; align-items:center; }
+html body #title .uDuo .btn{ width:162px !important; font-size:16px !important; padding-top:17px !important; padding-bottom:18px !important; }
+html body #options #lvlSel .btn{ min-width:54px !important; min-height:46px !important; }
+html body #intel #intelClose{ min-width:48px !important; min-height:48px !important; }
+/* tall screens centre these pages; short ones scroll from the top instead of cutting the title off */
+html body #options, html body #rushSel, html body #rushLb, html body #planeSel, html body #rushEnd{ justify-content:flex-start !important; }
+html body #options > :first-child, html body #rushSel > :first-child, html body #rushLb > :first-child, html body #planeSel > :first-child, html body #rushEnd > :first-child{ margin-top:auto !important; }
+html body #options > :last-child, html body #rushSel > :last-child, html body #rushLb > :last-child, html body #planeSel > :last-child, html body #rushEnd > :last-child{ margin-bottom:auto !important; }
+/* short screens: Boss rush, Intel files and Options share one row so the menu needs less shrinking */
+html body #title .uDuo.trio17{ gap:6px !important; width:100% !important; max-width:340px !important; box-sizing:border-box !important; margin-left:auto !important; margin-right:auto !important; }
+html body #title .uDuo.trio17 .btn{ width:auto !important; flex:1 1 0 !important; min-width:0 !important; margin:9px 0 !important; font-size:13px !important; letter-spacing:0 !important; padding:17px 2px 18px 12px !important; white-space:nowrap !important; }
+/* ---------- less clutter ---------- */
+html body #hangar .hg-hint{ height:auto !important; min-height:16px !important; max-height:44px !important; }
+html body #rushSel .rsRule, html body #rushSel .rsRule2, html body #rushSel .rsHint{ line-height:1.5 !important; }
+html body #medals .md-sec span:empty{ display:none; }
+`; document.head.appendChild(st); }
+
+/* ---------- hangar: shorter depot cards and stats line ---------- */
+function tidyHangar17(){ try{
+  const h3=document.querySelector('#hangar .rowStash h3'); if(h3&&/drag parts/i.test(h3.textContent)) h3.textContent='Stash';
+  document.querySelectorAll('#shop .offer').forEach(o=>{
+    const fx=o.querySelector('.fitsx'); if(fx) fx.remove();
+    const ds=o.querySelector('.ds'); if(ds){ const br=ds.querySelector('br'); if(br){ while(br.nextSibling) br.nextSibling.remove(); br.remove(); } }
+    const sh=o.querySelector('.nm span:last-child'); if(sh){ const m=/wt\s*([\d.]+)/i.exec(sh.textContent); if(m) sh.textContent='WT '+m[1]; } });
+  const st=document.querySelector('#stats'); if(st){ const parts=st.innerHTML.split('<br>');
+    const a=parts[0].split(' · ').filter(s=>!/jets? per sortie|\bno$|\bnone$|×1\.00$/i.test(s.trim())).map(s=>s.replace(/^Bombs per sortie:\s*/i,'Bombs ').replace(/^Weight ([\d.]+) → Speed (×[\d.]+)/,'Speed $2 (wt $1)'));
+    const b=(parts[1]||'').split(' · ').filter(s=>!/^Main gun:/i.test(s.trim()));
+    const nh=a.join(' · ')+(b.join('')?'<br>'+b.join(' · '):''); if(nh!==st.innerHTML) st.innerHTML=nh; }
+  }catch(e){} }
+{ const _rh=renderHangar; renderHangar=function(){ const r=_rh.apply(this,arguments); tidyHangar17(); return r; }; }
+
+/* ---------- main menu: one row for the three small buttons when the screen is short ---------- */
+{ const _mf=menuFit17; menuFit17=function(){ const m=document.querySelector('#title .uMenu'), duo=m&&m.querySelector('.uDuo'), op=document.getElementById('uOpts');
+    if(!m||!duo||!op) return _mf.apply(this,arguments);
+    if(op.parentNode===duo){ duo.after(op); duo.classList.remove('trio17'); }
+    _mf.apply(this,arguments);
+    if(m.classList.contains('menu')&&parseFloat(m.style.zoom||'1')<0.92){ duo.appendChild(op); duo.classList.add('trio17'); _mf.apply(this,arguments); } }; }
+
+/* ---------- jet select: drop the bracketed asides ---------- */
+{ const _pr=psRender; psRender=function(){ const r=_pr.apply(this,arguments); try{
+    document.querySelectorAll('#planeSel .ps-perk span, #planeSel .ps-gdesc').forEach(el=>{ for(const n of el.childNodes) if(n.nodeType===3) n.textContent=n.textContent.replace(/\s*\([^)]*\)/g,''); });
+  }catch(e){} return r; }; }
+
+/* ---------- in a sortie: visible PAUSE and BOMB buttons ---------- */
+const HUD17={on:false, shift:26};
+{ const _ht=hudText; hudText=function(t,x,y,col,sz,al){ if(HUD17.on&&x===10&&(y===8||y===21)) x+=HUD17.shift; return _ht.call(this,t,x,y,col,sz,al); }; }
+{ const _hb=hudBomb; hudBomb=function(x,y){ if(HUD17.on) return; return _hb.apply(this,arguments); }; }
+{ const _hp=drawHpBoxes; drawHpBoxes=function(p){ if(!HUD17.on||!p||p.hp===undefined) return _hp.apply(this,arguments);
+    const n=p.hpMax, art=P14.hud_hp_on&&P14.hud_hp_off&&P14.hud_hp_warn, bw=art?(n>6?8:10):(n>6?7:10), gap=art?1:2, x0=(art?W-7:W-8)-n*bw-(n-1)*gap;
+    ctx.save(); ctx.translate(26-x0,0); _hp.apply(this,arguments); ctx.restore(); }; }
+function drawPauseBtn17(){ const x=5, y=5, w=26, h=24; ctx.save();
+  ctx.fillStyle='rgba(10,14,22,.62)'; ctx.fillRect(x,y,w,h); ctx.strokeStyle='rgba(234,241,255,.6)'; ctx.lineWidth=1.5; ctx.strokeRect(x+0.75,y+0.75,w-1.5,h-1.5);
+  ctx.fillStyle='#eaf1ff'; ctx.fillRect(x+7.5,y+6,4,h-12); ctx.fillRect(x+w-11.5,y+6,4,h-12); ctx.restore(); }
+function drawBombBtn17(p){ const cx=W-36, cy=H-37, r=25, n=Math.max(0,p.bombs|0), live=n>0&&!(G.jam>0); ctx.save();
+  ctx.globalAlpha=live?1:0.5; ctx.fillStyle=live?'rgba(255,190,60,.16)':'rgba(10,14,22,.5)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU); ctx.fill();
+  ctx.fillStyle='rgba(10,14,22,.45)'; ctx.beginPath(); ctx.arc(cx,cy,r-4,0,TAU); ctx.fill();
+  ctx.lineWidth=2.5; ctx.strokeStyle=live?'#ffcf3a':'#6a7388'; ctx.beginPath(); ctx.arc(cx,cy,r-1.25,0,TAU); ctx.stroke();
+  const s=(typeof BOMB_ICON!=='undefined'&&BOMB_ICON)||P14.hud_bomb||null;
+  if(s&&s.img){ ctx.imageSmoothingEnabled=false; ctx.drawImage(s.img,Math.round(cx-13),Math.round(cy-13),26,26); }
+  const bx=cx+r-6, by=cy-r+5; ctx.globalAlpha=1; ctx.fillStyle='#0a0e16'; ctx.beginPath(); ctx.arc(bx,by,9,0,TAU); ctx.fill();
+  ctx.fillStyle=live?'#ffcf3a':'#6a7388'; ctx.beginPath(); ctx.arc(bx,by,7.5,0,TAU); ctx.fill(); ctx.restore();
+  pxText(ctx,String(n),bx,by-3.5,'#1a1206',1.2,'center'); }
+{ const _dh=drawHUD; drawHUD=function(p){ if(!G||!p||screenName!=='game'){ return _dh.apply(this,arguments); }
+    HUD17.on=true; try{ _dh.apply(this,arguments); } finally { HUD17.on=false; }
+    if(G.intro) return; drawPauseBtn17(); drawBombBtn17(p); }; }
+
+/* ---------- How to play: name the new buttons ---------- */
+try{ for(const t of TUT){
+  if(t[0]==='Fly') t[1]='<b>Drag anywhere</b> to fly.<br>Guns fire by themselves · <b>II</b> pauses.';
+  if(t[0]==='Dodge') t[1]='Only the <b>white dot</b> can be hit.<br>Your <b>HP</b> is at the bottom left.';
+  if(t[0]==='Bomb') t[1]=t[1].replace('<b>Tap with a 2nd finger</b> to bomb.','Tap <b>BOMB</b> (bottom right) or a <b>2nd finger</b>.'); } }catch(e){}
 
 </script>
 </body>
